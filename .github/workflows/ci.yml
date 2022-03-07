@@ -16,7 +16,7 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
-
+ 
       - name: Install Poetry
         uses: snok/install-poetry@v1.1.1
 
@@ -36,3 +36,30 @@ jobs:
       - name: Test with pytest
         run: poetry run pytest
 
+  test-aarch64:
+    name: build_arm64
+    runs-on: ubuntu-latest
+    strategy:
+        fail-fast: false 
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up QEMU
+      id: qemu
+      uses: docker/setup-qemu-action@v1
+    - name: Build and Test for arm64
+      run: |
+           docker run --rm -v ${{ github.workspace }}:/ws:rw --workdir=/ws \
+           arm64v8/ubuntu:latest \
+           bash -exc 'apt-get update && apt-get -y install git && \
+           ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime && export DEBIAN_FRONTEND=noninteractive && apt-get install -y tzdata && dpkg-reconfigure --frontend noninteractive tzdata && \
+           apt install -y software-properties-common && \
+           add-apt-repository ppa:deadsnakes/ppa && \
+           apt install -y python3.8 && \
+           apt install -y python3.8-venv && \
+           python3.8 -m venv venv38 && \
+           source venv38/bin/activate && \
+           python -m pip install --upgrade pip && \
+           curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python  && \
+           poetry --version && \
+           #poetry run pytest && \
+           poetry run pytest'      
